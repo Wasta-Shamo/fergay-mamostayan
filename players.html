@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لیستی یاریزانەکان</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        nav {
+            background: #2c3e50;
+            padding: 10px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        nav a:hover {
+            background: #3498db;
+        }
+        .player-card {
+            background: #f9f9f9;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .player-card:hover {
+            transform: translateY(-3px);
+        }
+        .player-info {
+            flex: 1;
+            min-width: 220px;
+            margin: 8px;
+            padding: 10px;
+        }
+        .player-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .search-container {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 10px;
+        }
+        #search-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .active {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .expired {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">زیادکردنی یاریزان</a>
+        <a href="players.html">بینینی یاریزانەکان</a>
+        <a href="expired.html">یاریزانە بەسەرچووەکان</a>
+    </nav>
+
+    <h1>لیستی یاریزانەکان</h1>
+    
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="گەڕان بە ناو، ژمارەی مۆبایل یان بەرواری بەسەرچوون...">
+    </div>
+    
+    <div id="message-container"></div>
+    
+    <div id="players-container"></div>
+
+    <script>
+        // وەرگرتنی یاریزانەکان لە خەزنەکە
+        function getPlayersFromStorage() {
+            try {
+                const players = localStorage.getItem('football-players');
+                if (!players) return [];
+                
+                const parsedPlayers = JSON.parse(players);
+                if (!Array.isArray(parsedPlayers)) {
+                    throw new Error('داتاکە شێوەی نادرووستی هەیە');
+                }
+                
+                return parsedPlayers;
+            } catch (error) {
+                console.error('هەڵە لە خوێندنەوەی داتا:', error);
+                showMessage('هەڵەیەک ڕوویدا لە خوێندنەوەی داتاکان', 'error');
+                return [];
+            }
+        }
+
+        // پشکنینی بەسەرچوون
+        function isExpired(expiryDate) {
+            if (!expiryDate) return true;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const expiry = new Date(expiryDate);
+            
+            return expiry < today;
+        }
+
+        // نیشاندانی پەیام
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => container.innerHTML = '', 3000);
+            }
+        }
+
+        // نیشاندانی یاریزانەکان
+        function displayPlayers(players = null) {
+            const container = document.getElementById('players-container');
+            const playersToShow = players || getPlayersFromStorage();
+            
+            container.innerHTML = '';
+            
+            if (playersToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>هیچ یاریزانێک تۆمارنەکراوە</p>
+                        <p><a href="index.html">بچۆ بۆ زیادکردنی یاریزان</a></p>
+                    </div>`;
+                return;
+            }
+            
+            playersToShow.forEach(player => {
+                const expired = isExpired(player.expiryDate);
+                const statusClass = expired ? 'expired' : 'active';
+                const statusText = expired ? 'بەسەرچوو' : 'چالاک';
+                
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <div class="player-info">
+                        <h3>${player.name || '---'} 
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </h3>
+                        <p><strong>بەرواری لەدایکبوون:</strong> ${player.birthDate || '---'}</p>
+                        <p><strong>ژمارەی مۆبایل:</strong> ${player.phone || '---'}</p>
+                    </div>
+                    <div class="player-info">
+                        <p><strong>کاتژمێر:</strong> ${player.time || '---'}</p>
+                        <p><strong>بڕی پارە:</strong> ${player.amount ? player.amount + ' دینار' : '---'}</p>
+                    </div>
+                    <div class="player-info">
+                        <p><strong>بەرواری داخڵبوون:</strong> ${player.registrationDate || '---'}</p>
+                        <p><strong>بەرواری بەسەرچوون:</strong> 
+                            ${player.expiryDate || '---'} 
+                            ${expired ? '⏰' : '✅'}
+                        </p>
+                    </div>
+                    <div class="player-actions">
+                        <button class="delete-btn" onclick="deletePlayer(${player.id})">سڕینەوە</button>
+                    </div>
+                `;
+                container.appendChild(playerCard);
+            });
+        }
+        
+        // سڕینەوەی یاریزان
+        function deletePlayer(id) {
+            if (confirm('دڵنیای لە سڕینەوەی ئەم یاریزانە؟')) {
+                try {
+                    let players = getPlayersFromStorage();
+                    const initialCount = players.length;
+                    
+                    players = players.filter(player => player.id !== id);
+                    
+                    if (players.length === initialCount) {
+                        showMessage('یاریزانەکە نەدۆزرایەوە', 'error');
+                        return;
+                    }
+                    
+                    localStorage.setItem('football-players', JSON.stringify(players));
+                    displayPlayers();
+                    showMessage('یاریزانەکە بە سەرکەوتوویی سڕایەوە!');
+                } catch (error) {
+                    console.error('هەڵە لە سڕینەوەی یاریزان:', error);
+                    showMessage('هەڵەیەک ڕوویدا لە سڕینەوەی یاریزانەکە', 'error');
+                }
+            }
+        }
+        
+        // گەڕان
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const players = getPlayersFromStorage();
+            
+            if (searchTerm === '') {
+                displayPlayers();
+                return;
+            }
+            
+            const filteredPlayers = players.filter(player => 
+                (player.name && player.name.toLowerCase().includes(searchTerm)) || 
+                (player.phone && player.phone.includes(searchTerm)) ||
+                (player.expiryDate && player.expiryDate.includes(searchTerm))
+            );
+            
+            displayPlayers(filteredPlayers);
+        });
+        
+        // نیشاندانی یاریزانەکان کاتێک پەڕە بار دەبێتەوە
+        window.addEventListener('load', function() {
+            displayPlayers();
+        });
+
+        // نمایش دادن پیام از URL اگر وجود داشته باشد
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message) {
+            showMessage(decodeURIComponent(message));
+            // پاک کردن پیام از URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    </script>
+</body>
+</html>

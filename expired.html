@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یاریزانە بەسەرچووەکان</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #e74c3c;
+            text-align: center;
+        }
+        nav {
+            background: #2c3e50;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 5px 10px;
+        }
+        nav a:hover {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        .player-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .player-info {
+            flex: 1;
+            min-width: 200px;
+            margin: 5px;
+        }
+        .player-actions {
+            display: flex;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .renew-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .no-expired {
+            text-align: center;
+            color: #2ecc71;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">زیادکردنی یاریزان</a>
+        <a href="players.html">بینینی یاریزانەکان</a>
+        <a href="expired.html">یاریزانە بەسەرچووەکان</a>
+    </nav>
+
+    <h1>یاریزانە بەسەرچووەکان</h1>
+    
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="گەڕان بە ناو یان ژمارەی مۆبایل...">
+    </div>
+    
+    <div id="players-container"></div>
+
+    <script>
+        // وەرگرتنی یاریزانەکان لە خەزنەکە
+        function getPlayersFromStorage() {
+            try {
+                const players = localStorage.getItem('football-players');
+                if (!players) return [];
+                return JSON.parse(players);
+            } catch (error) {
+                console.error('هەڵە لە خوێندنەوەی داتا:', error);
+                return [];
+            }
+        }
+
+        // پێوانەکردنی بەرواری ئەمڕۆ
+        function getTodayDate() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today;
+        }
+
+        // گۆڕینی بەروار لە شێوازی YYYY-MM-DD بۆ Date object
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            const parts = dateString.split('-');
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        // نیشاندانی یاریزانە بەسەرچووەکان
+        function displayExpiredPlayers(players = null) {
+            const container = document.getElementById('players-container');
+            const allPlayers = players || getPlayersFromStorage();
+            const today = getTodayDate();
+            
+            // فیلترکردنی یاریزانە بەسەرچووەکان
+            const expiredPlayers = allPlayers.filter(player => {
+                if (!player.expiryDate) return false;
+                const expiryDate = parseDate(player.expiryDate);
+                return expiryDate && expiryDate < today;
+            });
+            
+            container.innerHTML = '';
+            
+            if (expiredPlayers.length === 0) {
+                container.innerHTML = '<p class="no-expired">هیچ یاریزانێکی بەسەرچوو نییە 🎉</p>';
+                return;
+            }
+            
+            expiredPlayers.forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                playerCard.innerHTML = `
+                    <div class="player-info">
+                        <h3>${player.name || '---'}</h3>
+                        <p><strong>ژمارەی مۆبایل:</strong> ${player.phone || '---'}</p>
+                        <p><strong>بڕی پارە:</strong> ${player.amount ? player.amount + ' دینار' : '---'}</p>
+                    </div>
+                    <div class="player-info">
+                        <p><strong>بەرواری داخڵبوون:</strong> ${player.registrationDate || '---'}</p>
+                        <p><strong>بەرواری بەسەرچوون:</strong> <span style="color:red">${player.expiryDate || '---'}</span></p>
+                    </div>
+                    <div class="player-actions">
+                        <button class="renew-btn" onclick="renewPlayer(${player.id})">نوێکردنەوە</button>
+                        <button class="delete-btn" onclick="deletePlayer(${player.id})">سڕینەوە</button>
+                    </div>
+                `;
+                container.appendChild(playerCard);
+            });
+        }
+        
+        // نوێکردنەوەی یاریزان
+        function renewPlayer(id) {
+            if (confirm('دڵنیای لە نوێکردنەوەی ئەم یاریزانە؟')) {
+                let players = getPlayersFromStorage();
+                const playerIndex = players.findIndex(player => player.id === id);
+                
+                if (playerIndex !== -1) {
+                    // زیادکردنی 1 مانگ بۆ بەرواری بەسەرچوون
+                    const newExpiryDate = new Date();
+                    newExpiryDate.setMonth(newExpiryDate.getMonth() + 1);
+                    players[playerIndex].expiryDate = formatDate(newExpiryDate);
+                    
+                    localStorage.setItem('football-players', JSON.stringify(players));
+                    displayExpiredPlayers();
+                    alert('یاریزانەکە بە سەرکەوتوویی نوێکرایەوە!');
+                }
+            }
+        }
+        
+        // فۆرماتکردنی بەروار
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // سڕینەوەی یاریزان
+        function deletePlayer(id) {
+            if (confirm('دڵنیای لە سڕینەوەی ئەم یاریزانە؟')) {
+                let players = getPlayersFromStorage();
+                players = players.filter(player => player.id !== id);
+                localStorage.setItem('football-players', JSON.stringify(players));
+                displayExpiredPlayers();
+                alert('یاریزانەکە بە سەرکەوتوویی سڕایەوە!');
+            }
+        }
+        
+        // گەڕان
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const players = getPlayersFromStorage();
+            
+            if (searchTerm === '') {
+                displayExpiredPlayers();
+                return;
+            }
+            
+            const filteredPlayers = players.filter(player => 
+                (player.name && player.name.toLowerCase().includes(searchTerm)) || 
+                (player.phone && player.phone.includes(searchTerm))
+            );
+            
+            displayExpiredPlayers(filteredPlayers);
+        });
+        
+        // نیشاندانی یاریزانە بەسەرچووەکان کاتێک پەڕە بار دەبێتەوە
+        window.addEventListener('load', function() {
+            displayExpiredPlayers();
+        });
+    </script>
+</body>
+</html>

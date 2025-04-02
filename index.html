@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زیادکردنی یاریزان</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        nav {
+            background: #2c3e50;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 5px 10px;
+        }
+        nav a:hover {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        .success-message {
+            color: #2ecc71;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html">زیادکردنی یاریزان</a>
+        <a href="players.html">بینینی یاریزانەکان</a>
+        <a href="expired.html">یاریزانە بەسەرچووەکان</a>
+    </nav>
+
+    <form id="player-form">
+        <h1>زیادکردنی یاریزان</h1>
+        
+        <div id="message" class="success-message"></div>
+        
+        <label for="player-name">ناوی یاریزان</label>
+        <input type="text" id="player-name" name="player_name" required>
+        
+        <label for="birth-date">بەرواری لەدایکبوون</label>
+        <input type="date" id="birth-date" name="birth_date" required>
+        
+        <label for="phone">ژمارەی مۆبایل</label>
+        <input type="tel" id="phone" name="phone"  required>
+        
+        <label for="time">کاتژمێر</label>
+        <select id="time" name="time" required>
+            <option value="">کاتژمێر ھەڵبژێرە</option>
+            <option value="08:00">8:00 AM</option>
+            <option value="09:00">9:00 AM</option>
+            <option value="10:00">10:00 AM</option>
+            <option value="11:00">11:00 AM</option>
+            <option value="12:00">12:00 PM</option>
+            <option value="13:00">1:00 PM</option>
+            <option value="14:00">2:00 PM</option>
+            <option value="15:00">3:00 PM</option>
+            <option value="16:00">4:00 PM</option>
+            <option value="17:00">5:00 PM</option>
+            <option value="18:00">6:00 PM</option>
+        </select>
+        
+        <label for="amount">بڕی پارە</label>
+        <select id="amount" name="amount" required>
+            <option value="">بڕی پارە ھەڵبژێرە</option>
+            <option value="5000">5,000 دینار</option>
+            <option value="10000">10,000 دینار</option>
+            <option value="15000">15,000 دینار</option>
+            <option value="20000">20,000 دینار</option>
+            <option value="25000">25,000 دینار</option>
+            <option value="30000">30,000 دینار</option>
+            <option value="35000">35,000 دینار</option>
+            <option value="40000">40,000 دینار</option>
+            <option value="45000">45,000 دینار</option>
+            <option value="50000">50,000 دینار</option>
+        </select>
+        
+        <button type="submit">زیادکردنی یاریزان</button>
+    </form>
+
+    <script>
+        // فەرمانی زیادکردنی یاریزان
+        document.getElementById('player-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // پشکنینی ژمارەی مۆبایل
+            const phoneInput = document.getElementById('phone');
+            if (!/^[0-9]{10}$/.test(phoneInput.value)) {
+                showMessage('تکایە ژمارەی مۆبایلێکی دروست بنووسە (10 ژمارە)', 'error');
+                return;
+            }
+            
+            // بەرواری ئەمڕۆ و مانگی داهاتوو
+            const today = new Date();
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            
+            // وەرگرتنی زانیارییەکان
+            const player = {
+                name: document.getElementById('player-name').value.trim(),
+                birthDate: document.getElementById('birth-date').value,
+                phone: document.getElementById('phone').value,
+                time: document.getElementById('time').value,
+                amount: document.getElementById('amount').value,
+                registrationDate: formatDate(today),
+                expiryDate: formatDate(nextMonth),
+                id: Date.now() // ناسنامەی تاکەکەسی
+            };
+            
+            // زیادکردنی یاریزانە نوێیەکە
+            if (addPlayerToStorage(player)) {
+                // پاککردنەوەی فۆرمەکە
+                this.reset();
+                showMessage('یاریزانەکە بە سەرکەوتوویی تۆمارکرا!', 'success');
+            } else {
+                showMessage('هەڵەیەک ڕوویدا لە خەزنکردنی یاریزانەکە', 'error');
+            }
+        });
+        
+        // نیشاندانی پەیام
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.style.color = type === 'success' ? '#2ecc71' : '#e74c3c';
+            setTimeout(() => messageDiv.textContent = '', 3000);
+        }
+        
+        // فۆرماتکردنی بەروار
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // زیادکردنی یاریزان لە خەزنەکە
+        function addPlayerToStorage(player) {
+            try {
+                let players = getPlayersFromStorage();
+                players.push(player);
+                localStorage.setItem('football-players', JSON.stringify(players));
+                return true;
+            } catch (e) {
+                console.error('هەڵە لە خەزنکردنی یاریزان:', e);
+                return false;
+            }
+        }
+        
+        // وەرگرتنی یاریزانەکان لە خەزنەکە
+        function getPlayersFromStorage() {
+            try {
+                const players = localStorage.getItem('football-players');
+                return players ? JSON.parse(players) : [];
+            } catch (e) {
+                console.error('هەڵە لە خوێندنەوەی داتا لە localStorage:', e);
+                return [];
+            }
+        }
+
+        // نمایش داده‌های ذخیره شده هنگام بارگذاری صفحه (برای تست)
+        window.addEventListener('load', function() {
+            const players = getPlayersFromStorage();
+            console.log('یاریزانە خەزنکراوەکان:', players);
+        });
+    </script>
+</body>
+</html>
